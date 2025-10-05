@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dictionary & Diagram Generator</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Fira+Code&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --text-color: #212529;
+            --muted-text: #6c757d;
+            --border-color: #dee2e6;
+            --code-bg: #e9ecef;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .instructions {
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        details {
+            margin-bottom: 1rem;
+        }
+        
+        summary {
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+
+        .input-area {
+            margin-top: 10px;
+        }
+        
+        .format-selector {
+            margin-bottom: 15px;
+        }
+        
+        .format-selector label {
+            font-weight: 500;
+            margin-right: 10px;
+        }
+        
+        .format-selector select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            font-family: 'Inter', sans-serif;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        #output {
+            display: none;
+            margin-top: 40px;
+            border-top: 2px solid var(--primary-color);
+            padding-top: 20px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        
+        .export-buttons button {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            background-color: #6c757d;
+        }
+        
+        .export-buttons button:hover {
+            background-color: #5a6268;
+        }
+
+        .glossary-table {
+            margin-bottom: 30px;
+        }
+
+        .glossary-table h3 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .glossary-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .glossary-table th, .glossary-table td {
+            text-align: left;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .glossary-table th {
+            background-color: #f2f2f2;
+        }
+        
+        .glossary-table code {
+             background-color: var(--code-bg);
+             padding: 2px 5px;
+             border-radius: 3px;
+        }
+
+        #diagram-container {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Data Dictionary & Diagram Generator</h1>
+
+        <!-- Instructions Section -->
+        <div class="instructions">
+            <h2>How to Use This Tool</h2>
+            <p>This tool generates a data dictionary and a relationship diagram from a schema definition. Follow the steps below.</p>
+            <details>
+                <summary><strong>Step 1: Get Your Database Schema</strong></summary>
+                <p>You can get your schema in JSON format using the queries below, or structure it manually as XML or YAML.</p>
+                
+                <h3>Option A: Generate JSON from a Database</h3>
+                <p>Run the appropriate query for your database and copy the resulting JSON.</p>
+                <details>
+                    <summary>Show SQL Queries for JSON</summary>
+                    <h4>PostgreSQL</h4>
+                    <pre><code>[PostgreSQL query from previous version]</code></pre>
+                    <h4>MySQL (8.0+)</h4>
+                    <pre><code>[MySQL query from previous version]</code></pre>
+                    <h4>SQL Server (2016+)</h4>
+                    <pre><code>[SQL Server query from previous version]</code></pre>
+                </details>
+                
+                <h3>Option B: Create an XML file</h3>
+                <p>If you prefer XML, structure your data according to the following format, with table definitions and relationships separated.</p>
+                <pre><code>&lt;Database name="SampleDB"&gt;
+  &lt;Tables&gt;
+    &lt;Table name="Students"&gt;
+      &lt;Columns&gt;
+        &lt;Column name="student_id" type="INT" primaryKey="true"/&gt;
+        &lt;Column name="dept_id" type="INT"/&gt;
+      &lt;/Columns&gt;
+    &lt;/Table&gt;
+    &lt;Table name="Departments"&gt;
+      &lt;Columns&gt;
+        &lt;Column name="dept_id" type="INT" primaryKey="true"/&gt;
+      &lt;/Columns&gt;
+    &lt;/Table&gt;
+  &lt;/Tables&gt;
+  &lt;Relationships&gt;
+    &lt;Relationship&gt;
+      &lt;PrimaryTable name="Departments" key="dept_id"/&gt;
+      &lt;ForeignTable name="Students" key="dept_id"/&gt;
+    &lt;/Relationship&gt;
+  &lt;/Relationships&gt;
+&lt;/Database&gt;</code></pre>
+
+                <h3>Option C: Create a YAML file</h3>
+                <p>YAML is a human-readable format. Structure your data using indentation as shown below.</p>
+                <pre><code>database:
+  name: UniversityDB
+tables:
+  - name: Students
+    columns:
+      - name: student_id
+        type: INT
+        primaryKey: true
+      - name: dept_id
+        type: INT
+  - name: Departments
+    columns:
+      - name: dept_id
+        type: INT
+        primaryKey: true
+relationships:
+  - name: Student_Department
+    primary_table:
+      name: Departments
+      key: dept_id
+    foreign_table:
+      name: Students
+      key: dept_id</code></pre>
+            </details>
+            
+            <details open>
+                <summary><strong>Step 2: Provide Your Schema Below</strong></summary>
+                <div class="input-area">
+                    <div class="format-selector">
+                        <label for="format-selector">Input Format:</label>
+                        <select id="format-selector">
+                            <option value="json" selected>JSON</option>
+                            <option value="xml">XML</option>
+                            <option value="yaml">YAML</option>
+                        </select>
+                    </div>
+                    <textarea id="schema-input" placeholder="Paste your database schema here..."></textarea>
+                </div>
+            </details>
+
+        </div>
+
+        <button id="generate-btn">Generate Dictionary & Diagram</button>
+
+        <!-- Output Section (initially hidden) -->
+        <div id="output">
+             <div class="export-buttons">
+                <button id="export-html-btn">Export as HTML</button>
+                <button id="export-pdf-btn">Export as PDF</button>
+            </div>
+            <div id="output-content">
+                <h2>Data Dictionary Glossary</h2>
+                <div id="glossary-container"></div>
+                <h2>Table Relationship Diagram (ERD)</h2>
+                <div id="diagram-container">
+                    <div class="mermaid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript libraries from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        // --- DOM Element Selection ---
+        const schemaInput = document.getElementById('schema-input');
+        const formatSelector = document.getElementById('format-selector');
+        const generateBtn = document.getElementById('generate-btn');
+        const outputContainer = document.getElementById('output');
+        const glossaryContainer = document.getElementById('glossary-container');
+        const diagramContainer = document.querySelector('#diagram-container .mermaid');
+        const exportHtmlBtn = document.getElementById('export-html-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+
+        // --- Sample Data ---
+        const sampleJson = [
+            { "name": "users", "description": "Stores user account information.", "columns": [ { "name": "user_id", "dataType": "INT", "isPrimaryKey": true, "description": "Unique identifier for the user." }, { "name": "username", "dataType": "VARCHAR(50)", "description": "User's unique username." } ] },
+            { "name": "posts", "description": "Stores blog posts.", "columns": [ { "name": "post_id", "dataType": "INT", "isPrimaryKey": true }, { "name": "author_id", "dataType": "INT", "isForeignKey": true, "references": "users", "on": "user_id" } ] }
+        ];
+
+        const sampleXml = `<Database name="SampleDB">
+  <Tables>
+    <Table name="Students">
+      <Columns>
+        <Column name="student_id" type="INT" primaryKey="true"/>
+        <Column name="first_name" type="VARCHAR(50)"/>
+        <Column name="dept_id" type="INT"/>
+      </Columns>
+    </Table>
+    <Table name="Departments">
+      <Columns>
+        <Column name="dept_id" type="INT" primaryKey="true"/>
+        <Column name="dept_name" type="VARCHAR(100)"/>
+      </Columns>
+    </Table>
+  </Tables>
+  <Relationships>
+    <Relationship name="Student_Department">
+      <PrimaryTable name="Departments" key="dept_id"/>
+      <ForeignTable name="Students" key="dept_id"/>
+    </Relationship>
+  </Relationships>
+</Database>`;
+
+        const sampleYaml = `database:
+  name: UniversityDB
+tables:
+  - name: Students
+    columns:
+      - name: student_id
+        type: INT
+        primaryKey: true
+      - name: dept_id
+        type: INT
+  - name: Departments
+    columns:
+      - name: dept_id
+        type: INT
+        primaryKey: true
+relationships:
+  - name: Student_Department
+    primary_table:
+      name: Departments
+      key: dept_id
+    foreign_table:
+      name: Students
+      key: dept_id`;
+
+        // Set initial value
+        schemaInput.value = JSON.stringify(sampleJson, null, 2);
+
+        // Initialize Mermaid.js
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        // --- Event Listeners ---
+        formatSelector.addEventListener('change', (e) => {
+            const format = e.target.value;
+            if (format === 'json') {
+                schemaInput.value = JSON.stringify(sampleJson, null, 2);
+            } else if (format === 'xml') {
+                schemaInput.value = sampleXml;
+            } else if (format === 'yaml') {
+                schemaInput.value = sampleYaml;
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            const inputText = schemaInput.value;
+            const format = formatSelector.value;
+            if (!inputText.trim()) {
+                alert("Please provide your schema in the text area.");
+                return;
+            }
+
+            let schema;
+            try {
+                if (format === 'json') {
+                    schema = JSON.parse(inputText);
+                } else if (format === 'xml') {
+                    schema = parseXmlToSchema(inputText);
+                } else if (format === 'yaml') {
+                    schema = parseYamlToSchema(inputText);
+                }
+                
+                generateGlossary(schema);
+                generateDiagram(schema);
+                outputContainer.style.display = 'block';
+
+            } catch (error) {
+                alert(`Error parsing input: ${error.message}`);
+                console.error("Parsing Error:", error);
+            }
+        });
+
+        // --- Parsing Functions ---
+        function parseXmlToSchema(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+            if (xmlDoc.getElementsByTagName("parsererror").length) {
+                throw new Error("Invalid XML format. Check browser console for details.");
+            }
+
+            const schema = [];
+            const tablesNode = xmlDoc.getElementsByTagName('Tables')[0];
+            if (!tablesNode) throw new Error("<Tables> tag not found in XML.");
+            
+            const tableNodes = tablesNode.getElementsByTagName('Table');
+
+            // First pass: Parse all table and column definitions from attributes
+            for (const tableNode of tableNodes) {
+                const tableObj = {
+                    name: tableNode.getAttribute('name'),
+                    description: '', // This format doesn't have table descriptions
+                    columns: []
+                };
+
+                const columnsNode = tableNode.getElementsByTagName('Columns')[0];
+                if (columnsNode) {
+                    const columnNodes = columnsNode.getElementsByTagName('Column');
+                    for (const colNode of columnNodes) {
+                        tableObj.columns.push({
+                            name: colNode.getAttribute('name'),
+                            dataType: colNode.getAttribute('type'),
+                            isPrimaryKey: colNode.getAttribute('primaryKey') === 'true',
+                            isForeignKey: false, // Default to false, updated in the next pass
+                            references: null,
+                            on: null,
+                            description: '' // No column descriptions in this format
+                        });
+                    }
+                }
+                schema.push(tableObj);
+            }
+
+            // Second pass: Parse relationships and update the schema
+            const relationshipsNode = xmlDoc.getElementsByTagName('Relationships')[0];
+            if (relationshipsNode) {
+                const relationshipNodes = relationshipsNode.getElementsByTagName('Relationship');
+                for (const relNode of relationshipNodes) {
+                    const primaryTableNode = relNode.getElementsByTagName('PrimaryTable')[0];
+                    const foreignTableNode = relNode.getElementsByTagName('ForeignTable')[0];
+
+                    if (primaryTableNode && foreignTableNode) {
+                        const primaryTableName = primaryTableNode.getAttribute('name');
+                        const primaryKey = primaryTableNode.getAttribute('key');
+                        const foreignTableName = foreignTableNode.getAttribute('name');
+                        const foreignKey = foreignTableNode.getAttribute('key');
+
+                        const targetTable = schema.find(t => t.name === foreignTableName);
+                        if (targetTable) {
+                            const targetColumn = targetTable.columns.find(c => c.name === foreignKey);
+                            if (targetColumn) {
+                                targetColumn.isForeignKey = true;
+                                targetColumn.references = primaryTableName;
+                                targetColumn.on = primaryKey;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return schema;
+        }
+
+        function parseYamlToSchema(yamlString) {
+            const lines = yamlString.split('\n').filter(line => line.trim() !== '');
+            const schema = [];
+            let relationships = [];
+
+            let currentContext = null; // 'tables' or 'relationships'
+            let currentItem = null;    // The current table or relationship object
+            let subContext = null;     // 'columns', 'primary_table', etc.
+
+            lines.forEach(line => {
+                const indent = line.search(/\S|$/);
+                const [key, ...valParts] = line.trim().split(':');
+                const value = valParts.join(':').trim();
+
+                if (indent === 0) { // Top-level keys like 'tables:' or 'relationships:'
+                    currentContext = key;
+                } else if (currentContext === 'tables' && indent === 2 && key.startsWith('- name')) {
+                    currentItem = { name: value, columns: [] };
+                    schema.push(currentItem);
+                } else if (currentContext === 'tables' && indent === 6 && key.startsWith('- name')) {
+                    if (currentItem) {
+                        const col = { name: value };
+                        currentItem.columns.push(col);
+                    }
+                } else if (currentContext === 'tables' && indent === 8) {
+                    if (currentItem && currentItem.columns.length > 0) {
+                        const lastCol = currentItem.columns[currentItem.columns.length - 1];
+                        if (key.trim() === 'primaryKey') {
+                            lastCol.isPrimaryKey = value === 'true';
+                        } else if (key.trim() === 'type') {
+                            lastCol.dataType = value;
+                        } else {
+                            lastCol[key.trim()] = value;
+                        }
+                    }
+                } else if (currentContext === 'relationships' && indent === 2 && key.startsWith('- name')) {
+                     currentItem = { name: value };
+                     relationships.push(currentItem);
+                     subContext = null;
+                } else if (currentContext === 'relationships' && indent === 4) {
+                    subContext = key.trim();
+                    if(currentItem) currentItem[subContext] = {};
+                } else if (currentContext === 'relationships' && indent === 6) {
+                    if (currentItem && subContext) {
+                        currentItem[subContext][key.trim()] = value;
+                    }
+                }
+            });
+
+            // Integrate relationships into the schema
+            relationships.forEach(rel => {
+                if (rel.foreign_table && rel.primary_table) {
+                    const fTableName = rel.foreign_table.name;
+                    const fKey = rel.foreign_table.key;
+                    const pTableName = rel.primary_table.name;
+                    const pKey = rel.primary_table.key;
+
+                    const targetTable = schema.find(t => t.name === fTableName);
+                    if (targetTable) {
+                        const targetColumn = targetTable.columns.find(c => c.name === fKey);
+                        if (targetColumn) {
+                            targetColumn.isForeignKey = true;
+                            targetColumn.references = pTableName;
+                            targetColumn.on = pKey;
+                        }
+                    }
+                }
+            });
+
+            return schema;
+        }
+
+        // --- Generation and Export Functions ---
+        function generateGlossary(schema) {
+            glossaryContainer.innerHTML = '';
+            schema.forEach(table => {
+                const tableDiv = document.createElement('div');
+                tableDiv.className = 'glossary-table';
+                let tableHtml = `<h3>${table.name}</h3><p>${table.description || 'No description provided.'}</p><table><thead><tr><th>Column Name</th><th>Data Type</th><th>Constraints</th><th>Description</th></tr></thead><tbody>`;
+                table.columns.forEach(col => {
+                    let constraints = [];
+                    if (col.isPrimaryKey) constraints.push('<code>PK</code>');
+                    if (col.isForeignKey) constraints.push(`<code>FK</code> to <code>${col.references}(${col.on})</code>`);
+                    tableHtml += `<tr><td><strong>${col.name}</strong></td><td>${col.dataType}</td><td>${constraints.join('<br>')}</td><td>${col.description || ''}</td></tr>`;
+                });
+                tableHtml += `</tbody></table>`;
+                tableDiv.innerHTML = tableHtml;
+                glossaryContainer.appendChild(tableDiv);
+            });
+        }
+        
+        async function generateDiagram(schema) {
+            let mermaidString = 'erDiagram\n';
+            schema.forEach(table => {
+                mermaidString += `    ${table.name} {\n`;
+                table.columns.forEach(col => {
+                    let pkLabel = col.isPrimaryKey ? 'PK' : '';
+                    let fkLabel = col.isForeignKey ? 'FK' : '';
+                    mermaidString += `        ${(col.dataType || '').replace(/[\s()]/g, '_')} ${col.name} "${pkLabel}${fkLabel}"\n`;
+                });
+                mermaidString += '    }\n';
+            });
+            
+            schema.forEach(table => {
+                table.columns.forEach(col => {
+                    if (col.isForeignKey && col.references) {
+                        mermaidString += `    ${col.references} ||--o{ ${table.name} : "has"\n`;
+                    }
+                });
+            });
+
+            try {
+                diagramContainer.innerHTML = '';
+                const { svg } = await mermaid.render('mermaid-graph', mermaidString);
+                diagramContainer.innerHTML = svg;
+            } catch (error) {
+                 diagramContainer.innerHTML = 'Error rendering diagram. Check console.';
+                 console.error("Mermaid Render Error:", error);
+            }
+        }
+        
+        exportHtmlBtn.addEventListener('click', () => {
+            const content = document.getElementById('output-content').innerHTML;
+            const styles = Array.from(document.styleSheets).map(s => { try { return Array.from(s.cssRules).map(r => r.cssText).join('') } catch (e) { return ''}}).join('\n');
+            const html = `<!DOCTYPE html><html lang="en"><head><title>Data Dictionary Export</title><style>${styles}</style></head><body><div class="container">${content}</div></body></html>`;
+            const blob = new Blob([html], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'data-dictionary.html';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+
+        exportPdfBtn.addEventListener('click', async () => {
+             const { jsPDF } = window.jspdf;
+             const content = document.getElementById('output-content');
+             const originalButtonText = exportPdfBtn.textContent;
+             exportPdfBtn.textContent = 'Generating...';
+             exportPdfBtn.disabled = true;
+
+             try {
+                const canvas = await html2canvas(content, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const imgWidth = pdfWidth - 40;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 20;
+
+                pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+                heightLeft -= pdf.internal.pageSize.getHeight();
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight + 20;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+                    heightLeft -= pdf.internal.pageSize.getHeight();
+                }
+                pdf.save('data-dictionary.pdf');
+             } catch (error) {
+                 alert("Could not generate PDF. See console for details.");
+                 console.error("PDF Generation Error:", error);
+             } finally {
+                 exportPdfBtn.textContent = originalButtonText;
+                 exportPdfBtn.disabled = false;
+             }
+        });
+    </script>
+
+    <!-- Use shared event tracker (Q6) -->
+    <script src="../Q6/event-tracker.js"></script>
+</body>
+</html>
