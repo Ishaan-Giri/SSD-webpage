@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>3D Bowling Game 🎳</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { 
+        margin: 0; 
+        overflow: hidden; 
+        background: #f8fafc;
+        font-family: 'Inter', sans-serif;
+      }
+      
+      #ui {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.95);
+        color: #0f172a;
+        padding: 15px 30px;
+        border-radius: 12px;
+        font-size: 18px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+      }
+      
+      #controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.95);
+        color: #0f172a;
+        padding: 15px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+      }
+      
+      button {
+        background: #0ea5e9;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+      }
+      
+      button:hover { 
+        background: #0284c7; 
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+      }
+      
+      button:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      #framesBoard {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #0f172a;
+        padding: 15px;
+        border-radius: 12px;
+        font-family: 'Fira Code', ui-monospace, monospace;
+        font-size: 14px;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+      }
+      
+      .frame {
+        display: inline-block;
+        width: 40px;
+        padding: 5px;
+        margin: 2px;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        border-radius: 6px;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+      }
+      
+      .frame.active { 
+        border-color: #0ea5e9; 
+        background: rgba(14, 165, 233, 0.1); 
+        box-shadow: 0 0 0 1px #0ea5e9 inset;
+      }
+      
+      .rolls { 
+        height: 18px; 
+        font-weight: 600;
+        color: #0f172a;
+      }
+      
+      .cum { 
+        color: #64748b; 
+        font-size: 12px; 
+        margin-top: 2px;
+      }
+      
+      #instructions {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #64748b;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+      }
+      
+      .power-indicator {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      
+      .power-low { background: #22c55e; color: white; }
+      .power-medium { background: #f59e0b; color: white; }
+      .power-high { background: #ef4444; color: white; }
+    </style>
+  </head>
+  <body>
+    <div id="instructions">
+      🎯 Arrow Keys: Aim<br>
+      🚀 Space/Click: Throw<br>
+      ⚡ P: Change Power
+    </div>
+
+    <div id="ui">
+      <div><strong>Score:</strong> <span id="scoreValue">0</span> | <strong>Pins:</strong> <span id="pinsDown">0</span>/10</div>
+      <div id="status">Frame 1 • Ball 1</div>
+    </div>
+
+    <div id="controls">
+      <div style="margin-bottom: 10px; color: #64748b;">
+        Power: <span id="powerValue" class="power-indicator power-medium">Medium</span>
+      </div>
+      <button id="powerBtn">Change Power (P)</button>
+      <button id="resetBtn">Reset Frame</button>
+      <button id="newGameBtn">New Game</button>
+    </div>
+
+    <div id="framesBoard"></div>
+
+    <a-scene 
+      background="color: #e0f2fe"
+      cursor="rayOrigin: mouse">
+      
+      <!-- Camera with smooth movement -->
+      <a-entity id="cameraRig" position="0 2.5 12">
+        <a-camera 
+          look-controls="enabled: true; pointerLockEnabled: false"
+          wasd-controls="enabled: false"
+          position="0 0 0">
+        </a-camera>
+      </a-entity>
+
+      <!-- Lighting setup -->
+      <a-light type="ambient" intensity="0.4" color="#ffffff"></a-light>
+      <a-light type="directional" position="2 8 4" intensity="0.8" color="#ffffff"></a-light>
+      <a-light type="point" position="0 4 -8" intensity="0.6" color="#fef3c7"></a-light>
+
+      <!-- Bowling Lane -->
+      <a-box id="lane" 
+             position="0 0 0" 
+             width="2.2" 
+             height="0.15" 
+             depth="22" 
+             color="#d4a574">
+      </a-box>
+
+      <!-- Lane markings -->
+      <a-box position="0 0.08 7" width="2" height="0.01" depth="0.1" color="#8B7355"></a-box>
+      <a-box position="0 0.08 -8" width="2" height="0.01" depth="0.1" color="#8B7355"></a-box>
+
+      <!-- Lane walls (gutters) -->
+      <a-box position="-1.2 0.5 0" width="0.1" height="1" depth="22" color="#475569"></a-box>
+      <a-box position="1.2 0.5 0" width="0.1" height="1" depth="22" color="#475569"></a-box>
+      <a-box position="0 0.5 -11.5" width="2.5" height="1" depth="0.2" color="#475569"></a-box>
+
+      <!-- Ground plane -->
+      <a-plane position="0 -0.1 0" 
+               rotation="-90 0 0" 
+               width="50" 
+               height="50" 
+               color="#64748b">
+      </a-plane>
+
+      <!-- Bowling Ball with animation -->
+      <a-sphere id="ball" 
+                class="clickable"
+                position="0 0.25 9" 
+                radius="0.12" 
+                color="#0ea5e9"
+                material="metalness: 0.8; roughness: 0.2">
+      </a-sphere>
+
+      <!-- Aim indicator line -->
+      <a-box id="aimLine" 
+             position="0 0.26 8" 
+             width="0.02" 
+             height="0.02" 
+             depth="2"
+             color="#facc15"
+             visible="true">
+      </a-box>
+
+      <!-- Aim arrow at the end -->
+      <a-cone id="aimArrow"
+              position="0 0.26 7"
+              radius-bottom="0.05"
+              radius-top="0"
+              height="0.2"
+              rotation="90 0 0"
+              color="#facc15"
+              visible="true">
+      </a-cone>
+
+      <!-- Bowling Pins in proper formation -->
+      <!-- Back row (4 pins) -->
+      <a-cylinder id="pin1" class="pin" position="-0.45 0.4 -8.8" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+      <a-cylinder id="pin2" class="pin" position="-0.15 0.4 -8.8" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+      <a-cylinder id="pin3" class="pin" position="0.15 0.4 -8.8" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+      <a-cylinder id="pin4" class="pin" position="0.45 0.4 -8.8" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+
+      <!-- Third row (3 pins) -->
+      <a-cylinder id="pin5" class="pin" position="-0.3 0.4 -8.4" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+      <a-cylinder id="pin6" class="pin" position="0 0.4 -8.4" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+      <a-cylinder id="pin7" class="pin" position="0.3 0.4 -8.4" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+
+      <!-- Second row (2 pins) -->
+      <a-cylinder id="pin8" class="pin" position="-0.15 0.4 -8.0" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+      <a-cylinder id="pin9" class="pin" position="0.15 0.4 -8.0" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+
+      <!-- Head pin (1 pin) -->
+      <a-cylinder id="pin10" class="pin" position="0 0.4 -7.6" radius="0.06" height="0.8" 
+                  color="#f1f5f9"></a-cylinder>
+
+      <!-- Decorative elements -->
+      <a-box position="0 -0.05 -12" width="3" height="0.1" depth="1" color="#374151"></a-box>
+      <a-text position="0 0.5 -12.3" 
+              value="🎳 STRIKE ZONE" 
+              align="center" 
+              color="#0ea5e9" 
+              font="kelsonsans"
+              width="6">
+      </a-text>
+
+      <a-sky color="#e0f2fe"></a-sky>
+    </a-scene>
+
+    <script>
+      let currentFrame = 1;
+      let ballInFrame = 1;
+      let rolls = [];
+      let ballThrown = false;
+      let pinsKnockedThisThrow = 0;
+      let powerLevel = 1;
+      const powers = [15, 22, 30]; 
+      const powerNames = ['Low', 'Medium', 'High'];
+      const powerClasses = ['power-low', 'power-medium', 'power-high'];
+      let aimAngle = 0;
+      let gameInProgress = true;
+
+      let ballPosition = { x: 0, y: 0.25, z: 9 };
+      let ballVelocity = { x: 0, y: 0, z: 0 };
+      let animationId = null;
+
+      const pinInitialPositions = [
+        { id: 'pin1', x: -0.45, y: 0.4, z: -8.8 },
+        { id: 'pin2', x: -0.15, y: 0.4, z: -8.8 },
+        { id: 'pin3', x: 0.15, y: 0.4, z: -8.8 },
+        { id: 'pin4', x: 0.45, y: 0.4, z: -8.8 },
+        { id: 'pin5', x: -0.3, y: 0.4, z: -8.4 },
+        { id: 'pin6', x: 0, y: 0.4, z: -8.4 },
+        { id: 'pin7', x: 0.3, y: 0.4, z: -8.4 },
+        { id: 'pin8', x: -0.15, y: 0.4, z: -8.0 },
+        { id: 'pin9', x: 0.15, y: 0.4, z: -8.0 },
+        { id: 'pin10', x: 0, y: 0.4, z: -7.6 }
+      ];
+
+      const scoreEl = document.getElementById('scoreValue');
+      const pinsDownEl = document.getElementById('pinsDown');
+      const statusEl = document.getElementById('status');
+      const framesBoardEl = document.getElementById('framesBoard');
+      const powerValueEl = document.getElementById('powerValue');
+      const powerBtn = document.getElementById('powerBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const newGameBtn = document.getElementById('newGameBtn');
+
+      document.querySelector('a-scene').addEventListener('loaded', () => {
+        console.log('A-Frame scene loaded');
+        initializeGame();
+      });
+
+      function initializeGame() {
+        setupEventListeners();
+        updateFramesBoard();
+        updateStatus();
+        updateScore();
+        
+        updateBallRotation();
+        
+        console.log('Game initialized - Ready to bowl!');
+        console.log('Use LEFT/RIGHT arrow keys to aim, SPACE to throw');
+      }
+
+      function setupEventListeners() {
+        powerBtn.addEventListener('click', changePower);
+        resetBtn.addEventListener('click', resetFrame);
+        newGameBtn.addEventListener('click', startNewGame);
+
+        document.addEventListener('keydown', (e) => {
+          if (e.code === 'Space' && !ballThrown && gameInProgress) {
+            e.preventDefault();
+            throwBall();
+          } else if (e.code === 'ArrowLeft') {
+            e.preventDefault();
+            aimAngle = Math.max(aimAngle - 0.02, -0.2); 
+            updateBallRotation();
+            console.log(`Aiming LEFT: ${aimAngle.toFixed(3)} rad (${(aimAngle * 180 / Math.PI).toFixed(1)}°)`);
+          } else if (e.code === 'ArrowRight') {
+            e.preventDefault();
+            aimAngle = Math.min(aimAngle + 0.02, 0.2); 
+            updateBallRotation();
+            console.log(`Aiming RIGHT: ${aimAngle.toFixed(3)} rad (${(aimAngle * 180 / Math.PI).toFixed(1)}°)`);
+          } else if (e.code === 'KeyP') {
+            e.preventDefault();
+            changePower();
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (e.target.tagName === 'BUTTON') return;
+          if (!ballThrown && gameInProgress) throwBall();
+        });
+      }
+
+      function changePower() {
+        powerLevel = (powerLevel + 1) % 3;
+        powerValueEl.textContent = powerNames[powerLevel];
+        powerValueEl.className = `power-indicator ${powerClasses[powerLevel]}`;
+      }
+
+      function updateBallRotation() {
+        const ball = document.querySelector('#ball');
+        const aimLine = document.querySelector('#aimLine');
+        const aimArrow = document.querySelector('#aimArrow');
+        
+        if (!ballThrown) {
+          ball.setAttribute('rotation', `0 ${aimAngle * 180 / Math.PI} 0`);
+          
+          const lineLength = 5;
+          const ballX = ballPosition.x;
+          const ballZ = ballPosition.z;
+          
+          const dirX = Math.sin(aimAngle);
+          const dirZ = -Math.cos(aimAngle);
+          
+          const lineX = ballX + dirX * (lineLength / 2);
+          const lineZ = ballZ + dirZ * (lineLength / 2);
+          
+          aimLine.setAttribute('position', `${lineX} 0.26 ${lineZ}`);
+          aimLine.setAttribute('rotation', `0 ${aimAngle * 180 / Math.PI} 0`);
+          aimLine.setAttribute('width', '0.03');
+          aimLine.setAttribute('height', '0.03');
+          aimLine.setAttribute('depth', lineLength);
+          
+          const arrowX = ballX + dirX * lineLength;
+          const arrowZ = ballZ + dirZ * lineLength;
+          aimArrow.setAttribute('position', `${arrowX} 0.26 ${arrowZ}`);
+          aimArrow.setAttribute('rotation', `90 0 ${aimAngle * 180 / Math.PI}`);
+        }
+      }
+
+      function throwBall() {
+        if (ballThrown || !gameInProgress) return;
+
+        ballThrown = true;
+        pinsKnockedThisThrow = 0;
+        
+        powerBtn.disabled = true;
+        resetBtn.disabled = true;
+
+        document.querySelector('#aimLine').setAttribute('visible', false);
+        document.querySelector('#aimArrow').setAttribute('visible', false);
+
+        const power = powers[powerLevel] / 2;
+        ballVelocity.x = Math.sin(aimAngle) * power;
+        ballVelocity.z = -Math.cos(aimAngle) * power; 
+        ballVelocity.y = 0;
+
+        console.log(`Ball thrown! Power: ${power.toFixed(2)}`);
+        console.log(`Velocity: x=${ballVelocity.x.toFixed(2)}, z=${ballVelocity.z.toFixed(2)}`);
+        console.log(`Angle: ${aimAngle.toFixed(2)} rad (${(aimAngle * 180 / Math.PI).toFixed(1)}°)`);
+        
+        animateBall();
+      }
+
+      function animateBall() {
+        const ball = document.querySelector('#ball');
+        const camera = document.querySelector('#cameraRig');
+        
+        function animate() {
+          if (!ballThrown) return;
+
+          ballPosition.x += ballVelocity.x * 0.03; 
+          ballPosition.z += ballVelocity.z * 0.03; 
+          
+          ballVelocity.x *= 0.985;
+          ballVelocity.z *= 0.985;
+
+          if (ballPosition.x < -1.0) {
+            ballPosition.x = -1.0;
+            ballVelocity.x *= -0.3;
+          }
+          if (ballPosition.x > 1.0) {
+            ballPosition.x = 1.0;
+            ballVelocity.x *= -0.3;
+          }
+
+          ball.setAttribute('position', 
+            `${ballPosition.x} ${ballPosition.y} ${ballPosition.z}`);
+
+          const cameraZ = Math.max(ballPosition.z + 8, 4); 
+          const cameraY = 2.5 + (9 - ballPosition.z) * 0.1; 
+          camera.setAttribute('position', `0 ${cameraY} ${cameraZ}`);
+          
+          const lookAtZ = Math.min(ballPosition.z, -6); 
+          camera.setAttribute('rotation', `${-5 + (9 - ballPosition.z) * 1} 0 0`); 
+
+          checkPinCollisions();
+
+          const speed = Math.sqrt(ballVelocity.x**2 + ballVelocity.z**2);
+          if (speed < 0.05 || ballPosition.z < -12) { 
+            finishThrow();
+            return;
+          }
+
+          animationId = requestAnimationFrame(animate);
+        }
+
+        animate();
+      }
+
+      function checkPinCollisions() {
+        const pins = document.querySelectorAll('.pin');
+        
+        pins.forEach((pin, index) => {
+          const pinPos = pin.getAttribute('position');
+          const distance = Math.sqrt(
+            Math.pow(ballPosition.x - pinPos.x, 2) + 
+            Math.pow(ballPosition.z - pinPos.z, 2)
+          );
+
+          if (distance < 0.18 && pinPos.y > 0.2) {
+            pin.setAttribute('position', `${pinPos.x} 0.1 ${pinPos.z}`);
+            pin.setAttribute('rotation', '90 0 0');
+            pin.setAttribute('color', '#94a3b8');
+            
+            pinsKnockedThisThrow++;
+            pinsDownEl.textContent = pinsKnockedThisThrow;
+
+            const dx = ballPosition.x - pinPos.x;
+            const dz = ballPosition.z - pinPos.z;
+            ballVelocity.x += dx * 0.2; 
+            ballVelocity.z += dz * 0.2; 
+          }
+        });
+      }
+
+      function finishThrow() {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+
+        ballThrown = false;
+        powerBtn.disabled = false;
+        resetBtn.disabled = false;
+
+        rolls.push(pinsKnockedThisThrow);
+        console.log(`Throw finished: ${pinsKnockedThisThrow} pins knocked`);
+
+        if (currentFrame < 10) {
+          if (ballInFrame === 1 && pinsKnockedThisThrow === 10) {
+            setTimeout(() => {
+              currentFrame++;
+              ballInFrame = 1;
+              resetPins();
+              resetBall();
+              updateUI();
+            }, 2000);
+          } else if (ballInFrame === 1) {
+            ballInFrame = 2;
+            resetBall();
+            updateUI();
+          } else {
+            setTimeout(() => {
+              currentFrame++;
+              ballInFrame = 1;
+              resetPins();
+              resetBall();
+              updateUI();
+            }, 2000);
+          }
+        } else {
+          handleTenthFrame();
+        }
+
+        if (currentFrame > 10) {
+          endGame();
+        }
+
+        updateUI();
+      }
+
+      function handleTenthFrame() {
+        if (ballInFrame === 1) {
+          if (pinsKnockedThisThrow === 10) {
+            ballInFrame = 2;
+            setTimeout(() => {
+              resetPins();
+              resetBall();
+            }, 2000);
+          } else {
+            ballInFrame = 2;
+            resetBall();
+          }
+        } else if (ballInFrame === 2) {
+          const firstBall = rolls[rolls.length - 2] || 0;
+          const totalPins = firstBall + pinsKnockedThisThrow;
+          
+          if (firstBall === 10 || totalPins === 10) {
+            ballInFrame = 3;
+            setTimeout(() => {
+              if (totalPins === 10) resetPins();
+              resetBall();
+            }, 2000);
+          } else {
+            currentFrame = 11;
+          }
+        } else {
+          currentFrame = 11;
+        }
+      }
+
+      function resetPins() {
+        pinInitialPositions.forEach(pin => {
+          const element = document.getElementById(pin.id);
+          element.setAttribute('position', `${pin.x} ${pin.y} ${pin.z}`);
+          element.setAttribute('rotation', '0 0 0');
+          element.setAttribute('color', '#f1f5f9');
+        });
+        console.log('Pins reset');
+      }
+
+      function resetBall() {
+        const ball = document.querySelector('#ball');
+        const aimLine = document.querySelector('#aimLine');
+        const aimArrow = document.querySelector('#aimArrow');
+        const camera = document.querySelector('#cameraRig');
+        
+        ballPosition = { x: 0, y: 0.25, z: 9 };
+        ballVelocity = { x: 0, y: 0, z: 0 };
+        aimAngle = 0;
+        
+        ball.setAttribute('position', `${ballPosition.x} ${ballPosition.y} ${ballPosition.z}`);
+        ball.setAttribute('rotation', '0 0 0');
+        
+        camera.setAttribute('position', '0 2.5 12');
+        camera.setAttribute('rotation', '0 0 0');
+        
+        aimLine.setAttribute('visible', true);
+        aimArrow.setAttribute('visible', true);
+        updateBallRotation();
+        
+        console.log('Ball and camera reset to starting position');
+      }
+
+      function resetFrame() {
+        if (ballThrown) return;
+        resetPins();
+        resetBall();
+        pinsKnockedThisThrow = 0;
+        updateUI();
+      }
+
+      function startNewGame() {
+        rolls = [];
+        currentFrame = 1;
+        ballInFrame = 1;
+        ballThrown = false;
+        gameInProgress = true;
+        pinsKnockedThisThrow = 0;
+        
+        resetPins();
+        resetBall();
+        updateUI();
+        
+        console.log('New game started');
+      }
+
+      function endGame() {
+        gameInProgress = false;
+        const finalScore = computeScore(rolls);
+        
+        setTimeout(() => {
+          alert(`🎳 Game Over!\n\nFinal Score: ${finalScore}\n\nClick "New Game" to play again!`);
+        }, 1000);
+      }
+
+      function computeScore(rollsArr) {
+        let score = 0, frame = 0, i = 0;
+        
+        while (frame < 10 && i < rollsArr.length) {
+          if (rollsArr[i] === 10) {
+            score += 10 + (rollsArr[i+1] || 0) + (rollsArr[i+2] || 0);
+            i++;
+            frame++;
+          } else {
+            const frameScore = (rollsArr[i] || 0) + (rollsArr[i+1] || 0);
+            if (frameScore === 10) {
+              score += 10 + (rollsArr[i+2] || 0);
+            } else {
+              score += frameScore;
+            }
+            i += 2;
+            frame++;
+          }
+        }
+        
+        return score;
+      }
+
+      function updateScore() {
+        scoreEl.textContent = computeScore(rolls);
+      }
+
+      function updateStatus() {
+        if (currentFrame > 10) {
+          statusEl.textContent = `Game Complete!`;
+        } else {
+          statusEl.textContent = `Frame ${currentFrame} • Ball ${ballInFrame}`;
+        }
+      }
+
+      function updateFramesBoard() {
+        let html = '<div style="margin-bottom: 10px;"><strong>📊 Scorecard</strong></div>';
+        
+        for (let i = 1; i <= 10; i++) {
+          const active = i === currentFrame ? ' active' : '';
+          html += `<div class="frame${active}">
+            <div class="rolls">F${i}</div>
+            <div class="cum">-</div>
+          </div>`;
+        }
+        
+        html += `<div style="margin-top: 10px; text-align: center;">
+          <strong>Score: ${computeScore(rolls)}</strong>
+        </div>`;
+        
+        framesBoardEl.innerHTML = html;
+      }
+
+      function updateUI() {
+        updateScore();
+        updateStatus();
+        updateFramesBoard();
+        
+        pinsDownEl.textContent = pinsKnockedThisThrow;
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          console.log('DOM loaded, waiting for A-Frame...');
+        });
+      }
+    </script>
+  </body>
+</html>
+</html>
