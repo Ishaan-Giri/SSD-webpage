@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Stoplight Game - Nash Equilibrium</title>
+
+    <style>
+        /* Styles the entire page for centering and font selection */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background-color: #f0f2f5;
+            margin-top: 20px;
+        }
+        /* Styles the main game container */
+        #game-container {
+            border: 2px solid #ccc;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        /* Styles the scoreboard area */
+        #scoreboard {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1.5rem;
+            margin: 20px 0;
+        }
+        /* Styles the individual score displays */
+        .score {
+            font-weight: bold;
+        }
+        /* Styles the container for the action buttons */
+        #controls {
+            margin: 20px 0;
+        }
+        /* General styling for the action buttons */
+        button {
+            font-size: 1.2rem;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s;
+        }
+        /* Adds a press-down effect when a button is clicked */
+        button:active {
+            transform: scale(0.95);
+        }
+        /* Styles the 'Go' button with a green color */
+        #go-btn {
+            background-color: #28a745; /* Green */
+        }
+        /* Styles the 'Stop' button with a red color */
+        #stop-btn {
+            background-color: #dc3545; /* Red */
+        }
+        /* Styles the area where results are displayed */
+        #result-display {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            min-height: 100px; /* Ensures consistent layout */
+        }
+        /* Styles the explanation text about Nash Equilibrium */
+        #nash-explanation {
+            font-style: italic;
+            color: #666;
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Stoplight Game 🚦</h1>
+        
+        <p>You and the computer are approaching an intersection. Do you <b>Go</b> or <b>Stop</b>?</p>
+        
+        <div id="scoreboard">
+            <div>Your Score: <span id="player-score" class="score">0</span></div>
+            <div>Computer Score: <span id="computer-score" class="score">0</span></div>
+        </div>
+
+        <div id="controls">
+            <button id="go-btn">Go</button>
+            <button id="stop-btn">Stop</button>
+        </div>
+
+        <div id="result-display">
+            <p id="moves-info">Make your choice to begin!</p>
+            <p id="outcome-info"></p>
+            <p id="nash-explanation"></p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element Selection ---
+        // Retrieves the 'Go' button element from the HTML document.
+        const goBtn = document.getElementById('go-btn');
+        // Retrieves the 'Stop' button element from the HTML document.
+        const stopBtn = document.getElementById('stop-btn');
+        // Retrieves the element used to display the player's score.
+        const playerScoreEl = document.getElementById('player-score');
+        // Retrieves the element used to display the computer's score.
+        const computerScoreEl = document.getElementById('computer-score');
+        // Retrieves the element used to show the moves made by both players.
+        const movesInfoEl = document.getElementById('moves-info');
+        // Retrieves the element used to show the outcome of the round.
+        const outcomeInfoEl = document.getElementById('outcome-info');
+        // Retrieves the element used for explaining the Nash Equilibrium concept.
+        const nashExplanationEl = document.getElementById('nash-explanation');
+
+        // --- Game State Variables ---
+        // Initializes the player's score to 0 at the start of the game.
+        let playerScore = 0;
+        // Initializes the computer's score to 0 at the start of the game.
+        let computerScore = 0;
+
+        // --- Event Listeners ---
+        // Attaches a click event listener to the 'Go' button. When clicked, it runs the playGame function with 'Go' as the player's move.
+        goBtn.addEventListener('click', () => playGame('Go'));
+        // Attaches a click event listener to the 'Stop' button. When clicked, it runs the playGame function with 'Stop' as the player's move.
+        stopBtn.addEventListener('click', () => playGame('Stop'));
+
+        // --- Core Game Logic Function ---
+        // This function is called when the player makes a move.
+        function playGame(playerMove) {
+            // --- Computer's Move ---
+            // Generates a random number between 0 and 1. If it's less than 0.5, the computer's move is 'Go', otherwise it's 'Stop'.
+            const computerMove = Math.random() < 0.5 ? 'Go' : 'Stop';
+            
+            // Initializes variables to hold the outcome message and explanation text.
+            let outcomeMessage = '';
+            // Initializes variables to hold the explanation message.
+            let nashMessage = '';
+
+            // --- Determine Outcome based on Payoff Matrix ---
+            // This block checks if both the player and the computer chose 'Go'.
+            if (playerMove === 'Go' && computerMove === 'Go') {
+                // Sets the outcome message for a crash.
+                outcomeMessage = "💥 You both chose 'Go' and crashed! (-10 points each)";
+                // Updates the player's score by subtracting 10.
+                playerScore -= 10;
+                // Updates the computer's score by subtracting 10.
+                computerScore -= 10;
+                // Sets the explanation for why this is not a stable outcome.
+                nashMessage = "This is not a Nash Equilibrium. If you knew the computer would 'Go', you would have been better off choosing 'Stop'.";
+            
+            // This block checks if the player chose 'Go' and the computer chose 'Stop'.
+            } else if (playerMove === 'Go' && computerMove === 'Stop') {
+                // Sets the outcome message for the player winning.
+                outcomeMessage = "✅ You chose 'Go' and the computer stopped. You win the round! (+5 points)";
+                // Updates the player's score by adding 5.
+                playerScore += 5;
+                // Updates the computer's score by subtracting 1.
+                computerScore -= 1;
+                // Explains why this outcome is a Nash Equilibrium.
+                nashMessage = "This IS a Nash Equilibrium. Neither player can improve their score by changing their move alone.";
+
+            // This block checks if the player chose 'Stop' and the computer chose 'Go'.
+            } else if (playerMove === 'Stop' && computerMove === 'Go') {
+                // Sets the outcome message for the computer winning.
+                outcomeMessage = "❌ You chose 'Stop' and the computer went. The computer wins the round. (-1 point)";
+                // Updates the player's score by subtracting 1.
+                playerScore -= 1;
+                // Updates the computer's score by adding 5.
+                computerScore += 5;
+                // Explains why this outcome is also a Nash Equilibrium.
+                nashMessage = "This IS a Nash Equilibrium. Neither player can improve their score by changing their move alone.";
+            
+            // This block covers the case where both players chose 'Stop'.
+            } else if (playerMove === 'Stop' && computerMove === 'Stop') {
+                // Sets the outcome message for a draw.
+                outcomeMessage = "🤝 You both chose 'Stop'. A safe draw. (0 points each)";
+                // No change in scores for a draw.
+                // playerScore += 0;
+                // computerScore += 0;
+                // Sets the explanation for why this is not a stable outcome.
+                nashMessage = "This is not a Nash Equilibrium. If you knew the computer would 'Stop', you would have been better off choosing 'Go' to get more points.";
+            }
+
+            // --- Update User Interface (UI) ---
+            // Updates the HTML to show the player's current score.
+            playerScoreEl.textContent = playerScore;
+            // Updates the HTML to show the computer's current score.
+            computerScoreEl.textContent = computerScore;
+            // Updates the HTML to show the moves that were just played.
+            movesInfoEl.textContent = `You chose: ${playerMove} | Computer chose: ${computerMove}`;
+            // Updates the HTML to display the detailed outcome message.
+            outcomeInfoEl.textContent = outcomeMessage;
+            // Updates the HTML to display the Nash Equilibrium explanation.
+            nashExplanationEl.textContent = nashMessage;
+        }
+    </script>
+
+    <script src="../Q6/event-tracker.js"></script>
+</body>
+</html>
